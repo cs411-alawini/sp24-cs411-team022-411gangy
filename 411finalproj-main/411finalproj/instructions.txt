@@ -1,0 +1,8 @@
+1. install mysql and also mysql workbench. create the tables using the document
+2. add the insert statements (optional - not needed for functionality)
+3. change the sql host password etc stuff in server.js to match your local database connection
+4. install all the required packages (node, express, npm, react, mysql2, (might have forgetten some))
+5. create two terminals - cd one to backend and cd the other to frontend
+6. 'npm run dev' in backend. should run in localhost:3000
+7. 'npm start' in frontend. should run in localhost:3001 (or somewehre else - this doesnt matter as much)
+8. let me know if anything else doesn't work properly lol
