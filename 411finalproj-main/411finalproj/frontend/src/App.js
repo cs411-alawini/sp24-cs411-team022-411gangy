@@ -12,7 +12,7 @@ function App() {
     e.preventDefault();
     try {
       //for some reason it needs the whole string...
-      const response = await axios.post('http://localhost:3000/api/user_profile', {
+      const response = await axios.post('http://localhost:3001/api/user_profile', {
         "name": name,
         "email": email,
         "gender": gender,
@@ -25,7 +25,7 @@ function App() {
   };
   
     useEffect(() => {
-      fetch("http://localhost:3000/api").then(
+      fetch("http://localhost:3001/api").then(
         response => response.json()).then(
           data => {
           setName(data.data);
@@ -35,7 +35,7 @@ function App() {
   return (
     < >
       <SignUp />
-      <h1>welcome {name}</h1>
+      {/* <h1>welcome {name}</h1>
       <form onSubmit={submitFunc}>
         <label htmlFor="name">Name:</label>
         <input
@@ -86,7 +86,7 @@ function App() {
         </select>
 
         <button type="submit">Add Profile</button>
-      </form>
+      </form> */}
     </ >
   );
 }

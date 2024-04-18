@@ -12,11 +12,6 @@ const theme = extendTheme({
         bold: 600,
         black: 700,
     },
-    colors: {
-        accent: 'red.600',
-        stroke: 'gray.200',
-        gray: 'gray.400',
-    },
     components: {
         Progress: {
             baseStyle: {

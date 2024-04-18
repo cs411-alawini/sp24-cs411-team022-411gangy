@@ -1,10 +1,11 @@
 const mysql = require('mysql2');
 const express = require('express');
 const app = express();
-const port = 3000; // we can change our port
+const port = 3001; // we can change our port
 const bodyParser = require('body-parser');
 // create a new MySQL connection
-
+var count = -1;
+var currentUser = {"userId": -1}
 var cors = require('cors');
 app.use(cors());
 app.use(bodyParser.json());
@@ -20,25 +21,28 @@ connection.connect((error) => {
     console.error('Error connecting to MySQL database:', error);
   } else {
     console.log('Connected to MySQL database!');
-    connection.query("SELECT * FROM Restaurant;", function(err, rows, fields) { //just making sure it works (yes it does)
+    connection.query("SELECT count(*) FROM User;", function(err, rows, fields) { //just making sure it works (yes it does)
       if(err!=null) {
         console.error('error connecting: ' + err.stack);
       } else {
-        console.log(rows[0]);
+        count = (rows[0]['count(*)']);
       }
     })
   }
 });
 
 app.get('/api', function (req, res) {
-  res.json({"data":"emily"});
+  res.json(currentUser);
+  console.log(currentUser.userId);
 });
 
 app.post('/api/user_profile', (req, res) => {
-    const { name, email, gender, genderPref } = req.body;
-  
-  /*const sql = 'INSERT INTO table1 (name, email, gender, genderpref) VALUES (?, ?, ?, ?)'; //need to fix this - ignore
-  connection.query(sql, [name, email, gender, genderPref], (err, result) => {
+    const { fname, lname, email, pass, gender, genderPref, cuisinePref, maxBudget, allergies, datelen } = req.body;
+  let userid = count+1;
+  count+=1;
+  currentUser = {"userId": userid, "email": email, "pass": pass, "fname": fname, "lname":lname, "gender":gender, "genderPref":genderPref, "cuisinePref":cuisinePref, "maxBudget":maxBudget, "dateTime":datelen, "allergies":allergies};
+  const sql = 'INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'; //need to fix this - ignore
+  connection.query(sql, [userid, email, pass, fname, lname, gender, genderPref, cuisinePref, maxBudget, datelen, allergies], (err, result) => {
       if (err) {
         console.error(err);
         console.log("sql related error..");
@@ -47,12 +51,12 @@ app.post('/api/user_profile', (req, res) => {
         console.error("works woo!");
         res.status(201).send('Data saved successfully');
       }
-    });*/
-    console.log(name+" "+email+" "+gender+" "+genderPref);
+    });
+    console.log(fname+"\n"+lname+"\n"+email+"\n"+pass+"\n"+gender+"\n"+genderPref+"\n"+cuisinePref+"\n"+maxBudget+"\n"+allergies+"\n"+datelen );
   });
   
 app.listen(port, () => {
-  console.log('Server is running on port 3000');
+  console.log('Server is running on port 3001');
 });
 
 // close the MySQL connection
