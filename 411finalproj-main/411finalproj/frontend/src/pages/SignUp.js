@@ -20,7 +20,7 @@ function SignUp() {
   const [datelen, setDatelen] = useState(0);
   const [showOutput, setShowOutput] = useState(false);
   const [submitResult, setSubmitResult] = useState("Please fill out the information below!");
-
+  const history = useHistory();
 
   const submitFunc = async (e) => {
     e.preventDefault();
@@ -53,10 +53,13 @@ function SignUp() {
           // setName(data.data);
         }
       )
+      //come up with a match here
+      history.push('/get-match'); //actually wrap this around a function? maybe
     } catch (error) {
       setSubmitResult("error while submitting information to the server!");
       console.error(error);
     }
+    
   };
   
     useEffect(() => {
