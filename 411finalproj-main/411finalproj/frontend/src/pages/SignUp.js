@@ -3,6 +3,7 @@ import { Box, Progress, VStack, Input, Text, Button, HStack, Link, Select } from
 import { ArrowRightIcon } from '@heroicons/react/24/solid';
 import Logo from '../components/Logo';
 
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 //import SignUp from './pages/SignUp';
@@ -46,6 +47,7 @@ function SignUp() {
             if(data.email!="" && data.fname!="" && data.lname!="") {
                 setShowOutput(true);
                 setSubmitResult("Hello "+data.fname+" "+data.lname+"! You are user #"+data.userId);
+                history.push('/get-match', { user: data.userId }); //actually wrap this around a function? maybe
             }
             else {
                 setSubmitResult("please fill out your email address!");
@@ -54,7 +56,7 @@ function SignUp() {
         }
       )
       //come up with a match here
-      history.push('/get-match'); //actually wrap this around a function? maybe
+      
     } catch (error) {
       setSubmitResult("error while submitting information to the server!");
       console.error(error);
