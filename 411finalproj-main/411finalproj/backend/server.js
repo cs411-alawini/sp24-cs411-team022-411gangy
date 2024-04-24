@@ -1,7 +1,7 @@
 const mysql = require('mysql2');
 const express = require('express');
 const app = express();
-const port = 3001; // we can change our port
+const port = 3000; // we can change our port
 const bodyParser = require('body-parser');
 // create a new MySQL connection
 var count = -1;
@@ -13,7 +13,7 @@ const connection = mysql.createConnection({ //change this based on your mysql db
   host: 'localhost',
   user: 'root',
   password: '411gangy',
-  database: 'db'
+  database: 'sys'
 });
 // connect to the MySQL database
 connection.connect((error) => {
@@ -53,6 +53,20 @@ app.post('/api/user_profile', (req, res) => {
       }
     });
     console.log(fname+"\n"+lname+"\n"+email+"\n"+pass+"\n"+gender+"\n"+genderPref+"\n"+cuisinePref+"\n"+maxBudget+"\n"+allergies+"\n"+datelen );
+
+    // get (user) match
+    // [cuisine_pref, max_budget, optimal_len_date, cuisine_pref, max_budget, optimal_len_date, gender_identity, gender_pref, userid]
+    const user_match_sql = match_person();
+    connection.query(user_match_sql, [cuisinePref, maxBudget, datelen, cuisinePref, maxBudget, datelen, gender, genderPref, userid], (err, rows, fields) => {
+      if (err) {
+        console.error(err);
+        console.log("sql related error..");
+        res.status(500).send('Error saving data');
+      } else {
+        console.log("found match!");
+      }
+    });
+
   });
   
 app.listen(port, () => {
