@@ -1,95 +1,76 @@
-import React from 'react';
-import { Box, Progress, VStack, Input, Text, Button, HStack, Link, Select } from '@chakra-ui/react';
-import { ArrowRightIcon } from '@heroicons/react/24/solid';
-import Logo from '../components/Logo';
+import React, { useState } from "react";
+import {
+  Box,
+  Progress,
+  VStack,
+  Text,
+  Button,
+  HStack,
+  Link,
+} from "@chakra-ui/react";
+import Logo from "../components/Logo";
+import Page1 from "./login/Page1";
+import Page2 from "./login/Page2";
+import Page3 from "./login/Page3";
+import Page4 from "./login/Page4";
 
 const SignUp = () => {
-    return (
-        <Box marginTop="100px" marginBottom="100px">
-            <VStack spacing="24px">
-                <Logo />
-                <Progress size="xs" value="20" width="320px" />
-                <VStack spacing="16px">
-                <VStack align="left" spacing="8px">
-                    <Text>First Name</Text>
-                    <Input placeholder="Enter first name" size="md" width="320px" />
-                </VStack>
-                <VStack align="left" spacing="8px">
-                    <Text>Last Name</Text>
-                    <Input placeholder="Enter last name" size="md" width="320px" />
-                </VStack>
-                <VStack align="left" spacing="8px">
-                    <Text>Email</Text>
-                    <Input placeholder="Enter email" size="md" width="320px" />
-                </VStack>
-                <VStack align="left" spacing="8px">
-                    <Text>Password</Text>
-                    <Input placeholder="Enter password" size="md" width="320px" />
-                </VStack>
-                <VStack align="left" spacing="8px">
-                    <Text>Confirm Password</Text>
-                    <Input placeholder="Re-enter password" size="md" width="320px" />
-                </VStack>
-                <VStack align="left" spacing="8px">
-                    <Text>Gender Identity</Text>
-                    <Select placeholder='Select a gender' size="md" width="320px">
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">All</option>
-                    </Select>
-                </VStack>
-                <VStack align="left" spacing="8px">
-                    <Text>Gender Preference</Text>
-                    <Select placeholder='Select a gender' size="md" width="320px">
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">All</option>
-                    </Select>
-                </VStack>
-                <VStack align="left" spacing="8px">
-                    <Text>Cuisine Preference</Text>
-                    <Select placeholder='Select a cuisine' size="md" width="320px">
-                    <option value="korean">Korean</option>
-                    <option value="japanese">Japanese</option>
-                    <option value="mexican">Mexican</option>
-                    <option value="american">American</option>
-                    <option value="italian">Italian</option>
-                    <option value="indian">Indian</option>
-                    <option value="mediterranean">Mediterranean</option>
-                    <option value="chinese">Chinese</option>
-                    <option value="middle-eastern">Middle Eastern</option>
-                    <option value="thai">Thai</option>
-                    <option value="southern">Southern</option>
-                    <option value="french">French</option>
-                    </Select>
-                </VStack>
-                <VStack align="left" spacing="8px">
-                    <Text>Maximum Budget</Text>
-                    <Input placeholder="$0.00" size="md" width="320px" />
-                </VStack>
-                <VStack align="left" spacing="8px">
-                    <Text>Allergies</Text>
-                    <Select placeholder='Select allergies' size="md" width="320px">
-                    <option value="milk">Milk</option>
-                    <option value="kosher">Kosher</option>
-                    <option value="shellfish">Shellfish</option>
-                    <option value="halal">Halal</option>
-                    <option value="vegetarian">Vegetarian</option>
-                    <option value="nuts">Nuts</option>
-                    <option value="soybeans">Soybeans</option>
-                    <option value="gluten">Gluten</option>
-                    <option value="nuts">Nuts</option>
-                    </Select>
-                </VStack>
-                </VStack>
-                <Button bgColor="red.600" color="white" width="320px" >Submit</Button>
-                <HStack>
-                <Text>Already have an account?</Text>
-                <Link>Log in</Link>
-                </HStack>
-            </VStack>
-        </Box>
-    );
+  const [page, setPage] = useState(1);
+  const [formData, setFormData] = useState({});
+
+  const nextPage = () => setPage(page + 1);
+  const handleChange = (data) => setFormData({ ...formData, ...data });
+
+  return (
+    <Box>
+      <VStack
+        spacing="24px"
+        height="100vh"
+        width="100vw"
+        justifyContent="center"
+      >
+        <Logo />
+        <Progress size="xs" value={(page / 4) * 100} width="320px" />
+        {page === 1 && (
+          <Page1 formData={formData} handleChange={handleChange} />
+        )}
+        {page === 2 && (
+          <Page2 formData={formData} handleChange={handleChange} />
+        )}
+        {page === 3 && (
+          <Page3 formData={formData} handleChange={handleChange} />
+        )}
+        {page === 4 && (
+          <Page4 formData={formData} handleChange={handleChange} />
+        )}
+        {page < 4 && (
+          <Button
+            bgColor="red.600"
+            _hover={{ bgColor: "red.700" }}
+            color="white"
+            width="320px"
+            onClick={nextPage}
+          >
+            Next
+          </Button>
+        )}
+        {page == 4 && (
+          <Button
+            bgColor="red.600"
+            _hover={{ bgColor: "red.700" }}
+            color="white"
+            width="320px"
+          >
+            Submit
+          </Button>
+        )}
+        <HStack>
+          <Text textColor="gray.500">Already have an account?</Text>
+          <Link>Log in</Link>
+        </HStack>
+      </VStack>
+    </Box>
+  );
 };
 
 export default SignUp;

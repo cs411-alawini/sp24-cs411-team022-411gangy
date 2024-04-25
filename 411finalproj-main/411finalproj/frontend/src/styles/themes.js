@@ -1,5 +1,4 @@
 import { extendTheme } from '@chakra-ui/react';
-
 const theme = extendTheme({
     fonts: {
         heading: 'Poppins',
@@ -11,11 +10,6 @@ const theme = extendTheme({
         medium: 500,
         bold: 600,
         black: 700,
-    },
-    colors: {
-        accent: 'red.600',
-        stroke: 'gray.200',
-        gray: 'gray.400',
     },
     components: {
         Progress: {
