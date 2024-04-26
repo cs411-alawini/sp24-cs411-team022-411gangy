@@ -14,6 +14,22 @@ import Page2 from "./login/Page2";
 import Page3 from "./login/Page3";
 import Page4 from "./login/Page4";
 
+const ContinueIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    fill="currentColor"
+    class="bi bi-arrow-right-short"
+    viewBox="0 0 16 16"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8"
+    />
+  </svg>
+);
+
 const SignUp = () => {
   const [page, setPage] = useState(1);
   const [formData, setFormData] = useState({});
@@ -51,10 +67,13 @@ const SignUp = () => {
             width="320px"
             onClick={nextPage}
           >
-            Next
+            <HStack spacing="8px">
+              <Text>Continue</Text>
+              <ContinueIcon />
+            </HStack>
           </Button>
         )}
-        {page == 4 && (
+        {page === 4 && (
           <Button
             bgColor="red.600"
             _hover={{ bgColor: "red.700" }}
