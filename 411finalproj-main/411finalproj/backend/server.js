@@ -14,7 +14,7 @@ const connection = mysql.createConnection({ //change this based on your mysql db
   host: 'localhost',
   user: 'root',
   password: '411gangy',
-  database: 'sys'
+  database: 'db'
 });
 // connect to the MySQL database
 connection.connect((error) => {
@@ -62,7 +62,22 @@ app.get('/api/create_match', (req, res) => {
   
   const date = '5/1/2024'; //cam make random later on...
   const time = '1:15pm';
-  return {matchId, res_name, date, time};//do you want to return restaurant information too? 
+  let avRating = 0;
+  let topReview = '';
+  connection.query(run_transaction, [res_name], (err, results) => {
+    if(err) {
+        console.error('Error finding results: ' + err.stack);
+    } else {
+        // Assuming the first result set is the average rating and the second is reviews
+        const avRating = results[0]; // Access the first result set
+        const topReview = results[1][0]; // Access the second result set
+        
+        // Process the result sets as needed
+        console.log('Average Rating:', avRating);
+        console.log('Reviews:', topReview);
+    }
+});
+  return {matchId, res_name, date, time, avRating, topReview};//do you want to return restaurant information too? 
   //need ot also display best review and average rating using stored procedure - maybe run in database first and see how it works..?
 
 });
@@ -152,7 +167,7 @@ function create_match( userIdA, userIdB) { //call this when you display each mat
       if(err!=null) {
         console.log('error adding into match');
       } else {
-        console.log('successfully added match!');
+        //console.log('successfully added match!');
       }
     });
   }
@@ -241,7 +256,7 @@ function generate_average_ratings() { //this works!
         });
         connection.query('UPDATE Restaurant SET AverageRating = ? WHERE RestaurantName = ?;', [av_rating, rows[i]['RestaurantName']], (err1, rows1, fields1) => {
           if(err1 == null) {
-            console.log("successfully added average rating!")
+            //console.log("successfully added average rating!")
           } else {console.log("issue w some row in adding av ratings");}
         });
       }
@@ -408,4 +423,5 @@ function run_transaction() { //needs at least 2 adv queries
   END
 
   COMMIT;`;
+  return sql;
 }
