@@ -29,6 +29,9 @@ connection.connect((error) => {
         count = (rows[0]['count(*)']);
       }
     });
+    
+    
+
     //connection.query() - need to go through every single restaurant and then calcualte average?
     connection.query(check_unique_trigger(), [], function(err,rows,fileds) {
       if(err!=null) {
@@ -99,14 +102,22 @@ app.post('/api/user_profile', (req, res) => {
   count+=1;
   currentUser = {"userId": userid, "email": email, "pass": pass, "fname": fname, "lname":lname, "gender":gender, "genderPref":genderPref, "cuisinePref":cuisinePref, "maxBudget":maxBudget, "dateTime":datelen, "allergies":allergies};
   const sql = 'INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'; //need to fix this - ignore
+  connection.query("DROP TRIGGER IF EXISTS check_unique;", function(err, rows, fields) { //just making sure it works (yes it does)
+    if(err!=null) {
+      console.log('error connecting trigger: ' + err);
+    } else {
+      console.error('drop trigger: ');
+    }
+  });
+  
   connection.query(sql, [userid, email, pass, fname, lname, gender, genderPref, cuisinePref, maxBudget, datelen, allergies], (err, result) => {
       if (err) {
         console.error(err);
         console.log("sql related error..");
-        res.status(500).send('Error saving data');
+        //res.status(500).send('Er ror saving data');
       } else {
         console.error("works woo!");
-        res.status(201).send('Data saved successfully');
+        //res.status(201).send('Data saved successfully');
       }
     });
     console.log(fname+"\n"+lname+"\n"+email+"\n"+pass+"\n"+gender+"\n"+genderPref+"\n"+cuisinePref+"\n"+maxBudget+"\n"+allergies+"\n"+datelen );
@@ -115,8 +126,13 @@ app.post('/api/user_profile', (req, res) => {
       if (err) {
         console.error(err);
       } else {
-        console.error("works!");
-        console.log(rows); //return rows to the frontend and take it to the next page (keep as a list somehow)
+        console.log("works!");
+        let list = [];
+        for(let i = 0; i < rows.length; i++) {
+          list.push({'userIdA': rows[i]['UserIdA'], 'userIdB': rows[i]['UserIdB']});
+        }
+        res.json({'matches':list,'userID':userid});
+        //console.log(list); //return rows to the frontend and take it to the next page (keep as a list somehow)
       }
       
       // console.log(rows[1]['UserIdA']+"\n"+rows[1]['UserIdB']);
