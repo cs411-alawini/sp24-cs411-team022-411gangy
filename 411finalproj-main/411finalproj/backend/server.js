@@ -56,43 +56,27 @@ app.get('/api', function (req, res) {
   console.log(currentUser.userId);
 });
 
-app.get('/api/create_match', (req, res) => {
+app.post('/api/create_match', async (req, res) => {
   //create name and get best restaurant for the match
   //not sure how to return - but you want to return date, time, etc (everything)
   const {userIdA, userIdB} = req.body;
   const matchId = create_match(userIdA, userIdB); 
-  const [res_name, address] = find_restaurant(userIdA, userIdB);
-  
-  const date = '5/1/2024'; //cam make random later on...
-  const time = '1:15pm';
-  let avRating = 0;
-  let topReview = '';
-  connection.query(run_transaction, [res_name], (err, results) => {
-    if(err) {
-        console.error('Error finding results: ' + err.stack);
-    } else {
-        // Assuming the first result set is the average rating and the second is reviews
-        avRating = results[0]; // Access the first result set
-        topReview = results[1][0]; // Access the second result set
-        
-        // Process the result sets as needed
-        console.log('Average Rating:', avRating);
-        console.log('Reviews:', topReview);
-    }
-});
-  res.json({matchId, res_name, address, date, time, avRating, topReview});//do you want to return restaurant information too? 
+  const result = await find_restaurant(userIdA, userIdB);
+  //console.log(res_name+address);
+  res.send(result);
+  //do you want to return restaurant information too? 
   //need ot also display best review and average rating using stored procedure - maybe run in database first and see how it works..?
 
 });
 
-app.get('/api/delete_match', (req, res) => {
+app.post('/api/delete_match', (req, res) => {
   //delete the match id
   const {matchId} = req.body;
   delete_match(matchId);
   res.json({"success":1})
 });
 
-app.get('/api/accept_match', (req, res) => {
+app.post('/api/accept_match', (req, res) => {
   const {matchId, restaurantName, date, time} = req.body;
   accept_reservation(matchId, restaurantName, date, time);
   console.log("accepted reservation!");
@@ -163,7 +147,7 @@ app.listen(port, () => {
 function create_match( userIdA, userIdB) { //call this when you display each match - call from frontend - mod through each - if reject, then delete match...
   //check if match exists
   let match_exists = 0;
-  connection.query('SELECT COUNT(*) FROM Matches WHERE (UserIdA = ? AND UserIdB = ?) OR (UserIdA = ? AND UserIdB = ?);', [userIdA, userIdB, userIdB, userIdA], (err, result) => {
+  connection.query('SELECT COUNT(*) FROM Matches WHERE (UserIdA = ? AND UserIdB = ?) OR (UserIdA = ? AND UserIdB = ?);', [userIdA, userIdB, userIdB, userIdA], (err, rows, fields) => {
     if(err!=null) {
       console.log('error connecting create match: ');
     } else {
@@ -172,25 +156,28 @@ function create_match( userIdA, userIdB) { //call this when you display each mat
       }
     }
   }); //if both A and B have no matches - then they match
-  const match_id = 0;
-  connection.query("SELECT count(*) FROM Matches;", function(err, rows, fields) { //just making sure it works (yes it does)
+  const match_id = [0];
+  connection.query("SELECT count(*) FROM Matches;", function(err, result) { //just making sure it works (yes it does)
     if(err!=null) {
       console.error('error connecting: ' + err.stack);
     } else {
-      match_id = (rows[0]['count(*)'])+1;
+      console.log(result);
+      match_id[0] = (result[0]['count(*)'])+1;
+      console.log("this is match id0!"+match_id[0]);
+      console.log("this is match id!"+match_id[0]);
+      if(match_exists == 0) {
+        connection.query('INSERT INTO Matches VALUES (?, ?, ?, ?);', [match_id[0], userIdA, userIdB, ''], (err, result) => {
+          if(err!=null) {
+            console.log('error adding into match'+err);
+          } else {
+            //console.log('successfully added match!');
+          }
+        });
+      }
+      return match_id[0]; //return match_id to frontend or something
     }
   });
   
-  if(match_exists == 0) {
-    connection.query('INSERT INTO Matches VALUES (?, ?, ?, ?);', [match_id, userIdA, userIdB, ''], (err, result) => {
-      if(err!=null) {
-        console.log('error adding into match');
-      } else {
-        //console.log('successfully added match!');
-      }
-    });
-  }
-  return match_id; //return match_id to frontend or something
 }
 function delete_match( match_id) { //when they click refresh, delete the match_id - otherwise, keep it.
   connection.query('DELETE FROM Matches WHERE MatchId = ?;', [match_id], (err, result) => {
@@ -222,10 +209,10 @@ function accept_reservation(match_id, restaurantName, date, time) { //if you kee
 function find_restaurant(userIdA, userIdB) {
   const int_UA = userIdA;
   const int_UB = userIdB;
-  const res_name = '';
+  let res_name = '';
   const UA = {max_budget: 0, Allergies: 0, CuisinePreference: 0, UserId: 0};
   const UB = {max_budget: 0, Allergies: 0, CuisinePreference: 0, UserId: 0};
-  connection.query('SELECT MaximumBudget, Allergies, CuisinePreference, UserId FROM Matches WHERE UserId = ?', [int_UA], (err, rows, fields) => {
+  connection.query('SELECT MaximumBudget, Allergies, CuisinePreference, UserId FROM User WHERE UserId = ?', [int_UA], (err, rows, fields) => {
     if(err!=null) {
       console.error('error find UA: ' + err.stack);
     } else {
@@ -233,34 +220,61 @@ function find_restaurant(userIdA, userIdB) {
       UA.Allergies = rows[0]['Allergies'];
       UA.CuisinePreference = rows[0]['CuisinePreference'];
       UA.UserId = rows[0]['UserId'];
+      connection.query('SELECT MaximumBudget, Allergies, CuisinePreference, UserId FROM User WHERE UserId = ?', [int_UB], (err, rows, fields) => {
+        if(err!=null) {
+          console.error('error find UB: ' + err.stack);
+        } else {
+          UB.max_budget = rows[0]['MaximumBudget'];
+          UB.Allergies = rows[0]['Allergies'];
+          UB.CuisinePreference = rows[0]['CuisinePreference'];
+          UB.UserId = rows[0]['UserId'];
+          const address = "";
+          connection.query(match_to_restaurant(), [UA.max_budget, UB.max_budget, UA.Allergies, UB.Allergies, UA.CuisinePreference, UB.CuisinePreference, UA.UserId, UB.UserId], (err, rows, fields) => {
+            if(err!=null) {
+              console.error('error find res: ' + err.stack);
+            } else {
+              console.log([UA.max_budget, UA.Allergies, UB.Allergies, UA.CuisinePreference, UB.CuisinePreference, UA.UserId, UB.UserId]);
+              console.log("rows:"+rows+" \n");
+              res_name = (rows[0]['RestaurantName']);
+              let addr = "";
+              connection.query('SELECT Address From Restaurant WHERE RestaurantName = ?', [res_name], (err, rows, fields) => {
+                if(err!=null) {
+                  console.error('error find address from res: ' + err.stack);
+                } else {
+                  addr = (rows[0]['Address']);
+                  console.log(res_name+addr);
+                  //return [res_name, addr];
+                  const date = '5/1/2024'; //cam make random later on...
+                  const time = '1:15pm';
+                  let avRating = 0;
+                  let topReview = '';
+                  connection.query(run_transaction(), [res_name, res_name], (err, results) => {
+                    if(err) {
+                        console.error('Error finding results: ' + err.stack);
+                    } else {
+                        // Assuming the first result set is the average rating and the second is reviews
+                        avRating = results[0]; // Access the first result set
+                        topReview = results[1][0]; // Access the second result set
+                        
+                        // Process the result sets as needed
+                        console.log('Average Rating:', avRating);
+                        console.log('Reviews:', topReview);
+                        return {matchId, res_name, address, date, time, avRating, topReview};
+                    }
+                });
+                }
+              });
+              
+            }
+          });
+          console.log(res_name);
+        }
+      });
     }
   });
-  connection.query('SELECT MaximumBudget, Allergies, CuisinePreference, UserId FROM Matches WHERE UserId = ?', [int_UB], (err, rows, fields) => {
-    if(err!=null) {
-      console.error('error find UB: ' + err.stack);
-    } else {
-      UB.max_budget = rows[0]['MaximumBudget'];
-      UB.Allergies = rows[0]['Allergies'];
-      UB.CuisinePreference = rows[0]['CuisinePreference'];
-      UB.UserId = rows[0]['UserId'];
-    }
-  });
-  const address = "";
-  connection.query(match_to_restaurant(), [UA.max_budget, UA.max_budget, UA.Allergies, UB.Allergies, UA.CuisinePreference, UB.CuisinePreference, UA.UserId, UB.UserId], (err, result) => {
-    if(err!=null) {
-      console.error('error find res: ' + err.stack);
-    } else {
-      res_name = (rows[0]['RestaurantName']);
-    }
-  });
-  connection.query('SELECT Address From Restaurant WHERE RestaurantName = ?', [res_name], (err, result) => {
-    if(err!=null) {
-      console.error('error find address from res: ' + err.stack);
-    } else {
-      res_name = (rows[0]['Address']);
-    }
-  });
-  return [res_name, address];
+  
+  return {matchId:"",res_name:"",address:"",date:"",time:"",avRating:"",topReview:""};
+  
   
 }
 
@@ -332,27 +346,24 @@ function match_person() {
   return sql;
 }
 
-// [UA.max_budget, UA.max_budget, UA.Allergies, UB.Allergies, UA.CuisinePreference, UB.CuisinePreference, UA.UserId, UB.UserId]
+// [UB.max_budget, UA.Allergies, UB.Allergies, UA.CuisinePreference, UB.CuisinePreference, UA.UserId, UB.UserId]
 function match_to_restaurant() {
   const sql = `SELECT RestaurantName, Score
   FROM (
       SELECT Res.RestaurantName,
           CASE
-              WHEN ? >= (SELECT AVG(OrderCost) FROM Reviews Rev WHERE Rev.RestaurantName = Res.RestaurantName) AND UB.MaximumBudget >= (SELECT AVG(OrderCost) FROM Reviews Rev WHERE Rev.RestaurantName = Res.RestaurantName) THEN 1
+              WHEN ? >= (SELECT AVG(OrderCost) FROM Reviews Rev WHERE Rev.RestaurantName = Res.RestaurantName) AND ? >= (SELECT AVG(OrderCost) FROM Reviews Rev WHERE Rev.RestaurantName = Res.RestaurantName) THEN 1
               ELSE 0
           END +
           CASE
-              WHEN EXISTS (SELECT RestaurantName FROM Reviews Rev WHERE Rev.RestaurantName = Res.RestaurantName AND (? = Rev.Allergies OR ? = Rev.Allergies) AND Res.AverageRating > 3) THEN 1
+              WHEN EXISTS (SELECT RestaurantName FROM Reviews Rev WHERE Rev.RestaurantName = Res.RestaurantName AND (Rev.DietaryRestrictions = ? OR Rev.DietaryRestrictions = ?) AND Res.AverageRating > 3) THEN 1
               ELSE 0
           END +
           CASE
-              WHEN ? = Res.Cuisine AND ? = Res.Cuisine THEN 1
+              WHEN Res.Cuisine = ? AND Res.Cuisine = ? THEN 1
               ELSE 0
           END AS Score
       FROM Restaurant Res
-      CROSS JOIN Matches M
-      JOIN User UA ON M.UserIdA = ?
-      JOIN User UB ON M.UserIdB = ?
   ) AS ScoredRestaurants
   ORDER BY Score DESC
   LIMIT 15;`;
@@ -411,43 +422,37 @@ function check_unique_trigger() { //has been implemented!
 // set up stored procedure to get query 3 and query 4 info
 function create_stored_procedure() { //implemented but never used.
   const sql = `
-  CREATE PROCEDURE GetQueryInfo
-  @RestaurantName VARCHAR(255)
-  AS
-  BEGIN
-      SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-      SELECT RestaurantName, AVG(rating)
-      FROM
-      (SELECT RestaurantName, Rating as rating
-          FROM Restaurant NATURAL JOIN Reviews) AS joined_table
-      GROUP BY RestaurantName
-      HAVING RestaurantName = @RestaurantName;
+  CREATE PROCEDURE GetQueryInfo(IN p_RestaurantName VARCHAR(255))
+BEGIN
+SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
-      SELECT * FROM Reviews
-      WHERE
-      (RestaurantName, Rating)
-      IN 
-      (SELECT RestaurantName, MAX(Rating)
-      FROM
-          Reviews
-      GROUP BY RestaurantName
-      HAVING RestaurantName = @RestaurantName)
-      ORDER BY OrderCost
-  END;`;
+    SELECT RestaurantName, AVG(Rating) AS avg_rating
+    FROM Restaurant
+    NATURAL JOIN Reviews
+    WHERE RestaurantName = p_RestaurantName
+    GROUP BY RestaurantName;
+
+    SELECT *
+    FROM Reviews
+    WHERE (RestaurantName, Rating) IN (
+        SELECT RestaurantName, MAX(Rating)
+        FROM Reviews
+        WHERE RestaurantName = p_RestaurantName
+        GROUP BY RestaurantName
+    )
+    ORDER BY OrderCost;
+END;`;
   return sql;
 } 
 
 // [restaurant_name]
 function run_transaction() { //needs at least 2 adv queries
   const sql = `
-  BEGIN TRANSACTION;
-  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+  START TRANSACTION;
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
-  IF @RestaurantName IS NOT NULL
-  BEGIN
-      EXEC GetQueryInfo @RestaurantName = '?';
-  END
+    CALL GetQueryInfo(?); 
 
-  COMMIT;`;
+COMMIT;`;
   return sql;
 }
