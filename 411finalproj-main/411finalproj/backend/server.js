@@ -61,7 +61,7 @@ app.get('/api/create_match', (req, res) => {
   //not sure how to return - but you want to return date, time, etc (everything)
   const {userIdA, userIdB} = req.body;
   const matchId = create_match(userIdA, userIdB); 
-  const res_name = find_restaurant(userIdA, userIdB);
+  const [res_name, address] = find_restaurant(userIdA, userIdB);
   
   const date = '5/1/2024'; //cam make random later on...
   const time = '1:15pm';
@@ -72,15 +72,15 @@ app.get('/api/create_match', (req, res) => {
         console.error('Error finding results: ' + err.stack);
     } else {
         // Assuming the first result set is the average rating and the second is reviews
-        const avRating = results[0]; // Access the first result set
-        const topReview = results[1][0]; // Access the second result set
+        avRating = results[0]; // Access the first result set
+        topReview = results[1][0]; // Access the second result set
         
         // Process the result sets as needed
         console.log('Average Rating:', avRating);
         console.log('Reviews:', topReview);
     }
 });
-  return {matchId, res_name, date, time, avRating, topReview};//do you want to return restaurant information too? 
+  res.json({matchId, res_name, address, date, time, avRating, topReview});//do you want to return restaurant information too? 
   //need ot also display best review and average rating using stored procedure - maybe run in database first and see how it works..?
 
 });
@@ -89,11 +89,14 @@ app.get('/api/delete_match', (req, res) => {
   //delete the match id
   const {matchId} = req.body;
   delete_match(matchId);
+  res.json({"success":1})
 });
 
 app.get('/api/accept_match', (req, res) => {
   const {matchId, restaurantName, date, time} = req.body;
   accept_reservation(matchId, restaurantName, date, time);
+  console.log("accepted reservation!");
+  res.json({"success":1})
 });
 
 app.post('/api/user_profile', (req, res) => {
@@ -242,7 +245,7 @@ function find_restaurant(userIdA, userIdB) {
       UB.UserId = rows[0]['UserId'];
     }
   });
-
+  const address = "";
   connection.query(match_to_restaurant(), [UA.max_budget, UA.max_budget, UA.Allergies, UB.Allergies, UA.CuisinePreference, UB.CuisinePreference, UA.UserId, UB.UserId], (err, result) => {
     if(err!=null) {
       console.error('error find res: ' + err.stack);
@@ -250,7 +253,14 @@ function find_restaurant(userIdA, userIdB) {
       res_name = (rows[0]['RestaurantName']);
     }
   });
-  return res_name;
+  connection.query('SELECT Address From Restaurant WHERE RestaurantName = ?', [res_name], (err, result) => {
+    if(err!=null) {
+      console.error('error find address from res: ' + err.stack);
+    } else {
+      res_name = (rows[0]['Address']);
+    }
+  });
+  return [res_name, address];
   
 }
 

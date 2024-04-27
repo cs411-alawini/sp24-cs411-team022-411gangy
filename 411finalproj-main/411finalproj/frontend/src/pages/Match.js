@@ -1,7 +1,9 @@
 import React from "react";
 import { Box, VStack, Button, Text, Card, HStack } from "@chakra-ui/react";
+import React, { useState } from "react";
 import Logo from "../components/Logo";
 import { Stars } from "@mui/icons-material";
+import { useLocation } from 'react-router-dom';
 
 const RefreshIcon = () => (
   <svg
@@ -31,13 +33,61 @@ const RefreshIcon = () => (
 );
 
 const Match = () => {
-  const date = "2/10";
-  const time = "4:00 PM";
-  const restaurantName = "Thursday Kitchen";
-  const address = "424 E 9th St, New York, NY 10009";
-  const topReview =
-    "Casual spot for Korean cooking with French and Spanish influences, plus playful drinks and desserts.";
-  const numStars = 5;
+  const location = useLocation();
+  const [page, setPage] = useState(1);
+  //const [matches,setMatches] = useState([]);
+  const otherIds = location.state.matches;
+  const userIdA = location.state.userID;
+  //const {otherIds, userId} = {location.state.matches, location.state.matches};
+  const [index, setIndex] = useState(0);
+
+  const [userIdB, setUserIdB] = useState(otherIds[index]);
+  const [date,setDate] = useState("");
+  const [time,setTime] = useState("");
+  const [restaurantName, setRestaurantName] = useState("");
+  const [address, setAddress] = useState("");
+  const [matchId, setMatchId] = useState(-1);
+  const [topReview, setTopReview] = useState("");
+  const [numStars, setNumStars] = 5;
+  if(matchId == -1) { // first time - need to deal with it
+    get_data();
+  }
+  const get_data = async (e) => {
+    try {
+      const response = await axios.post('http://localhost:3000/api/create_match', {"userIdA": userIdA, "userIdB": userIdB});
+      setMatchId(response.matchId);
+      setRestaurantName(response.res_name);
+      setDate(response.date);
+      setTime(response.time);
+      setNumStars(Math.round(response.avRating));
+      setTopReview(response.topReview);
+      setAddress(response.address);
+    } catch(err) {console.error("failed making match");}
+  }
+  const accept_match = async (e) => {
+    //also redirect
+    try {
+      const response = await axios.post('http://localhost:3000/api/create_match', {"userIdA": userIdA, "userIdB": userIdB});
+      if(response.success == 1) {
+        //then you go to next page w the info u have
+      } else {
+        setRestaurantName("failed accept match");
+      }
+    } catch(err) {};
+  }
+  const reject_match = async (e) => {
+    try {
+      const response = await axios.post('http://localhost:3000/api/delete_match', {"matchId": matchId}); //delete
+      if(response.success == 1) {
+        setIndex((index+1)%otherIds.length);
+        setUserIdB(otherIds[index]);
+        get_data(); //create next match
+      } else {
+        setRestaurantName("failed reject match");
+      }
+      
+    } catch(err) {};
+  }
 
   return (
     <Box>

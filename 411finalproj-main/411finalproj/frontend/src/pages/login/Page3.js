@@ -6,7 +6,7 @@ import {
   Select,
 } from "@chakra-ui/react";
 
-const Page3 = ({ formData, handleChange }) => {
+const Page3 = ({ formData, setFormData, handleChange }) => {
   return (
     <Box>
         <VStack spacing="16px">
@@ -19,6 +19,7 @@ const Page3 = ({ formData, handleChange }) => {
               textColor="gray.500"
               focusBorderColor="red.500"
               cursor="pointer"
+              onChange={(event) => setFormData({ ...formData, gender_identity: event.target.value })}
             >
               <option value="male">Male</option>
               <option value="female">Female</option>
@@ -34,6 +35,7 @@ const Page3 = ({ formData, handleChange }) => {
               textColor="gray.500"
               focusBorderColor="red.500"
               cursor="pointer"
+              onChange={(event) => setFormData({ ...formData, gender_preference: event.target.value })}
             >
               <option value="male">Male</option>
               <option value="female">Female</option>

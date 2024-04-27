@@ -9,7 +9,7 @@ import {
   InputLeftElement,
 } from "@chakra-ui/react";
 
-const Page4 = ({ formData, handleChange }) => {
+const Page4 = ({ formData, setFormData, handleChange }) => {
   return (
     <Box>
       <VStack spacing="16px">
@@ -22,19 +22,17 @@ const Page4 = ({ formData, handleChange }) => {
             textColor="gray.500"
             focusBorderColor="red.500"
             cursor="pointer"
+            onChange={(event) => setFormData({ ...formData, cuisine_preference: event.target.value })}
           >
-            <option value="korean">Korean</option>
-            <option value="japanese">Japanese</option>
-            <option value="mexican">Mexican</option>
-            <option value="american">American</option>
-            <option value="italian">Italian</option>
-            <option value="indian">Indian</option>
-            <option value="mediterranean">Mediterranean</option>
-            <option value="chinese">Chinese</option>
-            <option value="middle-eastern">Middle Eastern</option>
-            <option value="thai">Thai</option>
-            <option value="southern">Southern</option>
-            <option value="french">French</option>
+            <option value="Korean">Korean</option>
+            <option value="Japanese">Japanese</option>
+            <option value="Mexican">Mexican</option>
+            <option value="American">American</option>
+            <option value="Italian">Italian</option>
+            <option value="Indian">Indian</option>
+            <option value="Mediterranean">Mediterranean</option>
+            <option value="Chinese">Chinese</option>
+            <option value="Thai">Thai</option>
           </Select>
         </VStack>
         <VStack align="left" spacing="8px">
@@ -57,30 +55,37 @@ const Page4 = ({ formData, handleChange }) => {
               size="md"
               width="320px"
               focusBorderColor="red.500"
+              onChange={(event) => setFormData({ ...formData, max_budget: event.target.value })}
             />
           </InputGroup>
         </VStack>
         <VStack align="left" spacing="8px">
           <Text>Allergies</Text>
           <Select
-            placeholder="Select allergies"
+            placeholder="Select Allergies/Dietary Restrictions"
             size="md"
             width="320px"
             textColor="gray.500"
             focusBorderColor="red.500"
             cursor="pointer"
+            onChange={(event) => setFormData({ ...formData, allergies: event.target.value })}
           >
-            <option value="milk">Milk</option>
-            <option value="kosher">Kosher</option>
-            <option value="shellfish">Shellfish</option>
-            <option value="halal">Halal</option>
-            <option value="vegetarian">Vegetarian</option>
-            <option value="nuts">Nuts</option>
-            <option value="soybeans">Soybeans</option>
-            <option value="gluten">Gluten</option>
-            <option value="nuts">Nuts</option>
+            <option value="Milk">Milk</option>
+            <option value="Kosher">Kosher</option>
+            <option value="Shellfish">Shellfish</option>
+            <option value="Halal">Halal</option>
+            <option value="Vegetarian">Vegetarian</option>
+            <option value="Nuts">Nuts</option>
+            <option value="Soybeans">Soybeans</option>
+            <option value="Gluten">Gluten</option>
+            <option value="Nuts">Nuts</option>
           </Select>
         </VStack>
+        <VStack align="left" spacing="8px">
+            <Text>Maximum Date Length</Text>
+            <Input placeholder="Date length in minutes" size="md" width="320px" focusBorderColor="red.500" 
+            onChange={(event) => setFormData({ ...formData, date_len: event.target.value })} />
+          </VStack>
       </VStack>
     </Box>
   );

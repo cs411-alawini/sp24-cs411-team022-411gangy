@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
 import {
   Box,
   Progress,
@@ -31,9 +34,50 @@ const ContinueIcon = () => (
 );
 
 const SignUp = () => {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
-  const [formData, setFormData] = useState({});
-
+  let empty = {first_name:'', 
+            last_name:'',
+            email: '', 
+            password: '', 
+            confirm_password:'',
+            gender_identity:'',
+            gender_preference:'', 
+            cuisine_preference: '', 
+            max_budget: '',
+            allergies: '',
+            date_len: ''};
+  const [formData, setFormData] = useState(empty);
+  const [matches, setMatches] = useState([]);
+  const submitData = async (e) => {
+    e.preventDefault();
+    try {
+      console.log(formData);
+      if(formData.password !== formData.confirm_password) {
+        console.log("passwords don't match");
+      } else {
+      const response = await axios.post('http://localhost:3000/api/user_profile', {
+          "fname": formData.first_name,
+          "lname": formData.last_name,
+          "email": formData.email,
+          "pass": formData.password,
+          "gender": formData.gender_identity,
+          "genderPref": formData.gender_preference,
+          "cuisinePref": formData.cuisine_preference,
+          "maxBudget": formData.max_budget,
+          "allergies": formData.allergies,
+          "datelen": parseInt(formData.date_len,10)
+        });
+        setMatches(response.matches);//this should work? list of objects
+        console.log(matches);
+        navigate('/match', {'matches': matches, 'userID': response.userID});
+      }
+    } catch(error) {
+      console.log("error while submitting to server!");
+    }
+    //add data to the backend and retrieve the top matches...
+    //how do I redirect to another page? also need to pass list as props
+  }
   const nextPage = () => setPage(page + 1);
   const handleChange = (data) => setFormData({ ...formData, ...data });
 
@@ -48,16 +92,16 @@ const SignUp = () => {
         <Logo />
         <Progress size="xs" value={(page / 4) * 100} width="320px" />
         {page === 1 && (
-          <Page1 formData={formData} handleChange={handleChange} />
+          <Page1 formData={formData} setFormData={setFormData} handleChange={handleChange} />
         )}
         {page === 2 && (
-          <Page2 formData={formData} handleChange={handleChange} />
+          <Page2 formData={formData} setFormData={setFormData} handleChange={handleChange} />
         )}
         {page === 3 && (
-          <Page3 formData={formData} handleChange={handleChange} />
+          <Page3 formData={formData} setFormData={setFormData} handleChange={handleChange} />
         )}
         {page === 4 && (
-          <Page4 formData={formData} handleChange={handleChange} />
+          <Page4 formData={formData} setFormData={setFormData} handleChange={handleChange} />
         )}
         {page < 4 && (
           <Button
@@ -79,6 +123,7 @@ const SignUp = () => {
             _hover={{ bgColor: "red.700" }}
             color="white"
             width="320px"
+            onClick={submitData}
           >
             Submit
           </Button>
