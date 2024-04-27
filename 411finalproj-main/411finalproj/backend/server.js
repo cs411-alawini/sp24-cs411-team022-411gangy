@@ -451,7 +451,7 @@ function run_transaction() { //needs at least 2 adv queries
   START TRANSACTION;
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
-    CALL GetQueryInfo(?); 
+    CALL GetQueryInfo(?);  
 
 COMMIT;`;
   return sql;
