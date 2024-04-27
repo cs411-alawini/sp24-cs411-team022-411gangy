@@ -130,12 +130,12 @@ app.post('/api/user_profile', (req, res) => {
         console.error(err);
       } else {
         console.log("works!");
-        let list = [];
+        const list = [];
         for(let i = 0; i < rows.length; i++) {
           list.push({'userIdA': rows[i]['UserIdA'], 'userIdB': rows[i]['UserIdB']});
         }
         res.json({'matches':list,'userID':userid});
-        //console.log(list); //return rows to the frontend and take it to the next page (keep as a list somehow)
+        console.log(list); //return rows to the frontend and take it to the next page (keep as a list somehow)
       }
       
       // console.log(rows[1]['UserIdA']+"\n"+rows[1]['UserIdB']);
