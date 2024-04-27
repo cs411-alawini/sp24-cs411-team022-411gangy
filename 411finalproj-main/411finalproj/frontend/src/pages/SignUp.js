@@ -70,7 +70,9 @@ const SignUp = () => {
         });
         setMatches(response.matches);//this should work? list of objects
         console.log(matches);
-        navigate('/match', {'matches': matches, 'userID': response.userID});
+        localStorage.setItem("match_result", JSON.stringify({'matches': matches, 'userID': response.userID}));
+        navigate('/match');
+        
       }
     } catch(error) {
       console.log("error while submitting to server!");

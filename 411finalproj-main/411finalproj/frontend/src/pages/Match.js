@@ -1,9 +1,11 @@
-import React from "react";
+//import React from "react";
 import { Box, VStack, Button, Text, Card, HStack } from "@chakra-ui/react";
 import React, { useState } from "react";
 import Logo from "../components/Logo";
 import { Stars } from "@mui/icons-material";
 import { useLocation } from 'react-router-dom';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const RefreshIcon = () => (
   <svg
@@ -33,12 +35,16 @@ const RefreshIcon = () => (
 );
 
 const Match = () => {
-  const location = useLocation();
+  //const location = useLocation();
   const [page, setPage] = useState(1);
   //const [matches,setMatches] = useState([]);
-  const otherIds = location.state.matches;
-  const userIdA = location.state.userID;
-  //const {otherIds, userId} = {location.state.matches, location.state.matches};
+  //const otherIds = location.state.matches;
+  //const userIdA = location.state.userID;
+  const storedData = localStorage.getItem('match_result');
+  const parsedData = JSON.parse(storedData);
+  const otherIds = parsedData.matches;
+  const userIdA = parsedData.userID;
+ // const {otherIds, userIdA} = location.state;
   const [index, setIndex] = useState(0);
 
   const [userIdB, setUserIdB] = useState(otherIds[index]);
@@ -48,11 +54,9 @@ const Match = () => {
   const [address, setAddress] = useState("");
   const [matchId, setMatchId] = useState(-1);
   const [topReview, setTopReview] = useState("");
-  const [numStars, setNumStars] = 5;
-  if(matchId == -1) { // first time - need to deal with it
-    get_data();
-  }
+  const [numStars, setNumStars] = useState(5);
   const get_data = async (e) => {
+    //e.preventDefault();
     try {
       const response = await axios.post('http://localhost:3000/api/create_match', {"userIdA": userIdA, "userIdB": userIdB});
       setMatchId(response.matchId);
@@ -65,6 +69,8 @@ const Match = () => {
     } catch(err) {console.error("failed making match");}
   }
   const accept_match = async (e) => {
+    if(e)
+    e.preventDefault();
     //also redirect
     try {
       const response = await axios.post('http://localhost:3000/api/create_match', {"userIdA": userIdA, "userIdB": userIdB});
@@ -73,9 +79,11 @@ const Match = () => {
       } else {
         setRestaurantName("failed accept match");
       }
-    } catch(err) {};
+    } catch(err) {setRestaurantName("failed accept match catch")};
   }
   const reject_match = async (e) => {
+    if(e)
+    e.preventDefault();
     try {
       const response = await axios.post('http://localhost:3000/api/delete_match', {"matchId": matchId}); //delete
       if(response.success == 1) {
@@ -86,8 +94,12 @@ const Match = () => {
         setRestaurantName("failed reject match");
       }
       
-    } catch(err) {};
+    } catch(err) {setRestaurantName("failed reject match catch")};
   }
+  if(matchId == -1) { // first time - need to deal with it
+    get_data();
+  }
+  
 
   return (
     <Box>
@@ -109,7 +121,7 @@ const Match = () => {
         >
           <VStack spacing="8px" align="flex-start">
             <Text fontSize="20px" fontWeight="extrabold">
-              Maria
+              {userIdA}
             </Text>
             <VStack spacing="4px" align="flex-start">
               <Text fontSize="large" fontWeight="semibold">
@@ -146,6 +158,7 @@ const Match = () => {
             width="320px"
             bgColor="red.600"
             _hover={{ bgColor: "red.700" }}
+            onClick={accept_match}
           >
             Make a reservation
           </Button>
@@ -156,6 +169,7 @@ const Match = () => {
             borderColor="red.600"
             borderWidth="1px"
             _hover={{ textDecoration: "underline" }}
+            onClick={reject_match}
           >
             <HStack spacing="8px">
               <RefreshIcon />
