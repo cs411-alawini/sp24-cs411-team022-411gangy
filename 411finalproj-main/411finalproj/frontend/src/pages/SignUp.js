@@ -68,14 +68,15 @@ const SignUp = () => {
           "allergies": formData.allergies,
           "datelen": parseInt(formData.date_len,10)
         });
-        setMatches(response.matches);//this should work? list of objects
-        console.log(matches);
-        localStorage.setItem("match_result", JSON.stringify({'matches': matches, 'userID': response.userID}));
+        setMatches(response.data.matches);//this should work? list of objects
+        console.log(response.data.matches);
+        localStorage.setItem("match_result", JSON.stringify({'matches': response.data.matches, 'userID': response.data.userID}));
+        //console.log("length"+ matches.length);
         navigate('/match');
         
       }
     } catch(error) {
-      console.log("error while submitting to server!");
+      console.log("error while submitting to server!"+error);
     }
     //add data to the backend and retrieve the top matches...
     //how do I redirect to another page? also need to pass list as props

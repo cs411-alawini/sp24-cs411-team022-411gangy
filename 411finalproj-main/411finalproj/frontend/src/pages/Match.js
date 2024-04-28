@@ -37,6 +37,7 @@ const RefreshIcon = () => (
 const Match = () => {
   //const location = useLocation();
   const [page, setPage] = useState(1);
+  const navigate = useNavigate();
   //const [matches,setMatches] = useState([]);
   //const otherIds = location.state.matches;
   //const userIdA = location.state.userID;
@@ -47,50 +48,62 @@ const Match = () => {
  // const {otherIds, userIdA} = location.state;
   const [index, setIndex] = useState(0);
 
-  const [userIdB, setUserIdB] = useState(otherIds[index]);
+  const [userIdB, setUserIdB] = useState(otherIds[index].userIdB);
   const [date,setDate] = useState("");
   const [time,setTime] = useState("");
   const [restaurantName, setRestaurantName] = useState("");
   const [address, setAddress] = useState("");
   const [matchId, setMatchId] = useState(-1);
-  const [topReview, setTopReview] = useState("");
+  const [topReview, setTopReview] = useState("No review provided");
   const [numStars, setNumStars] = useState(5);
+  const [name, setName] = useState(5);
   const get_data = async (e) => {
-    //e.preventDefault();
+    if(e)
+    e.preventDefault();
     try {
       const response = await axios.post('http://localhost:3000/api/create_match', {"userIdA": userIdA, "userIdB": userIdB});
-      setMatchId(response.matchId);
-      setRestaurantName(response.res_name);
-      setDate(response.date);
-      setTime(response.time);
-      setNumStars(Math.round(response.avRating));
-      setTopReview(response.topReview);
-      setAddress(response.address);
-    } catch(err) {console.error("failed making match");}
+      setMatchId(response.data.matchId);
+      setRestaurantName(response.data.res_name);
+      setName(response.data.name);
+      setDate(response.data.date);
+      setTime(response.data.time);
+      setNumStars(Math.round(4));
+      if(response.data.topReview)
+      setTopReview(response.data.topReview);
+      setAddress(response.data.address);
+      console.log(response);
+    } catch(err) {console.error("failed making match"+err);}
   }
   const accept_match = async (e) => {
     if(e)
     e.preventDefault();
     //also redirect
     try {
-      const response = await axios.post('http://localhost:3000/api/create_match', {"userIdA": userIdA, "userIdB": userIdB});
-      if(response.success == 1) {
+      const response = await axios.post('http://localhost:3000/api/accept_match', {'matchId': matchId, 'restaurantName':restaurantName, 'date':date, 'time':time});
+      if(response.status == 200) {
         //then you go to next page w the info u have
+        localStorage.setItem("reserv", JSON.stringify({name,restaurantName,time,date}));
+        navigate('/confirmation');
       } else {
+        console.log(response);
         setRestaurantName("failed accept match");
       }
-    } catch(err) {setRestaurantName("failed accept match catch")};
+    } catch(err) {
+      
+      setRestaurantName("failed accept match catch")
+    };
   }
   const reject_match = async (e) => {
     if(e)
     e.preventDefault();
     try {
       const response = await axios.post('http://localhost:3000/api/delete_match', {"matchId": matchId}); //delete
-      if(response.success == 1) {
+      if(response.data.success == 1) {
         setIndex((index+1)%otherIds.length);
-        setUserIdB(otherIds[index]);
+        setUserIdB(otherIds[index].userIdB);
         get_data(); //create next match
       } else {
+        console.log(response);
         setRestaurantName("failed reject match");
       }
       
@@ -98,6 +111,7 @@ const Match = () => {
   }
   if(matchId == -1) { // first time - need to deal with it
     get_data();
+    //setRestaurantName("got data "+otherIds.length);
   }
   
 
@@ -121,11 +135,11 @@ const Match = () => {
         >
           <VStack spacing="8px" align="flex-start">
             <Text fontSize="20px" fontWeight="extrabold">
-              {userIdA}
+              {name}
             </Text>
             <VStack spacing="4px" align="flex-start">
               <Text fontSize="large" fontWeight="semibold">
-                {date}, {time} @ {restaurantName}
+                {restaurantName}, {time} @ {restaurantName}
               </Text>
               <Text fontSize="medium" fontWeight="medium">
                 {address}

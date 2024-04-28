@@ -33,6 +33,8 @@ const BackIcon = () => (
 );
 
 const Confirmation = () => {
+  const storedData = localStorage.getItem('reserv');
+  const parsedData = JSON.parse(storedData);
   return (
     <Box>
       <VStack
@@ -59,6 +61,7 @@ const Confirmation = () => {
           >
             <Icon as={ConfirmationIcon} />
             <Text textAlign="center">Your reservation has been confirmed!</Text>
+            <Text textAlign="center">{parsedData.restaurantName} with {parsedData.name} @ {parsedData.time}, {parsedData.date}!</Text>
           </VStack>
         </Card>
         <VStack spacing="16px">
