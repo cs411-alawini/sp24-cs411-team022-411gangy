@@ -40,13 +40,13 @@ connection.connect((error) => {
         console.log("trigger works!");
       }
     });
-    connection.query(create_stored_procedure(), [], function(err,rows,fields) {
+    /*connection.query(create_stored_procedure(), [], function(err,rows,fields) {
       if(err!=null) {
-        //console.log("trigger error! "+err.stack);
+        console.log("trigger error! "+err.stack);
       } else {
         console.log("trigger works!");
       }
-    });
+    });*/
     generate_average_ratings();
   }
 });
@@ -60,10 +60,10 @@ app.post('/api/create_match', async (req, res) => {
   //create name and get best restaurant for the match
   //not sure how to return - but you want to return date, time, etc (everything)
   const {userIdA, userIdB} = req.body;
-  const matchId = create_match(userIdA, userIdB); 
-  const result = await find_restaurant(userIdA, userIdB);
-  //console.log(res_name+address);
-  res.send(result);
+  const matchId = await create_match(userIdA, userIdB); 
+  const result = await find_restaurant(userIdA, userIdB, matchId, res);
+  console.log(result);
+  //res.send(result);
   //do you want to return restaurant information too? 
   //need ot also display best review and average rating using stored procedure - maybe run in database first and see how it works..?
 
@@ -78,9 +78,8 @@ app.post('/api/delete_match', (req, res) => {
 
 app.post('/api/accept_match', (req, res) => {
   const {matchId, restaurantName, date, time} = req.body;
-  accept_reservation(matchId, restaurantName, date, time);
-  console.log("accepted reservation!");
-  res.json({"success":1})
+  accept_reservation(matchId, restaurantName, date, time, res);
+  
 });
 
 app.post('/api/user_profile', (req, res) => {
@@ -188,25 +187,28 @@ function delete_match( match_id) { //when they click refresh, delete the match_i
     }
   });
 }
-function accept_reservation(match_id, restaurantName, date, time) { //if you keep it, call this function (accept reservation button)
-  const res_id = -1;
+function accept_reservation(match_id, restaurantName, date, time, res) { //if you keep it, call this function (accept reservation button)
+  let res_id = -1;
   //actually get correct reservation id
   connection.query("SELECT count(*) FROM Reservation;", function(err, rows, fields) { //just making sure it works (yes it does)
     if(err!=null) {
       console.error('error connecting: ' + err.stack);
     } else {
       res_id = (rows[0]['count(*)'])+1;
+      connection.query('INSERT INTO Reservation VALUES (?, ?, ?, ?, ?)', [res_id, restaurantName, match_id, time, date], (err, result) => {
+        if(err!=null) {
+          console.log("issue accepting reservation"+err);
+        }
+      });
+      console.log("accepted reservation!");
+      res.json({"success":1})
     }
   });
 
-  connection.query('INSERT INTO Reservation VALUES (?, ?, ?)', [res_id, restaurantName, match_id, time, date], (err, result) => {
-    if(err!=null) {
-      console.log("issue accepting reservation");
-    }
-  });
+  
 }
 
-function find_restaurant(userIdA, userIdB) {
+function find_restaurant(userIdA, userIdB, matchId, res) {
   const int_UA = userIdA;
   const int_UB = userIdB;
   let res_name = '';
@@ -220,12 +222,13 @@ function find_restaurant(userIdA, userIdB) {
       UA.Allergies = rows[0]['Allergies'];
       UA.CuisinePreference = rows[0]['CuisinePreference'];
       UA.UserId = rows[0]['UserId'];
-      connection.query('SELECT MaximumBudget, Allergies, CuisinePreference, UserId FROM User WHERE UserId = ?', [int_UB], (err, rows, fields) => {
+      connection.query('SELECT MaximumBudget, Allergies, FirstName, CuisinePreference, UserId FROM User WHERE UserId = ?', [int_UB], (err, rows, fields) => {
         if(err!=null) {
           console.error('error find UB: ' + err.stack);
         } else {
           UB.max_budget = rows[0]['MaximumBudget'];
           UB.Allergies = rows[0]['Allergies'];
+          UB.FirstName = rows[0]['FirstName'];
           UB.CuisinePreference = rows[0]['CuisinePreference'];
           UB.UserId = rows[0]['UserId'];
           const address = "";
@@ -259,7 +262,8 @@ function find_restaurant(userIdA, userIdB) {
                         // Process the result sets as needed
                         console.log('Average Rating:', avRating);
                         console.log('Reviews:', topReview);
-                        return {matchId, res_name, address, date, time, avRating, topReview};
+                        console.log({'name':UB.FirstName,matchId, res_name, address, date, time, avRating, topReview});
+                        res.json({'name':UB.FirstName, matchId, res_name, address, date, time, avRating, topReview});
                     }
                 });
                 }
@@ -446,13 +450,24 @@ END;`;
 } 
 
 // [restaurant_name]
-function run_transaction() { //needs at least 2 adv queries
+function run_transaction() { //needs at least 2 adv queries - making a transaction does NOT work...
   const sql = `
-  START TRANSACTION;
-SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
-    CALL GetQueryInfo(?);  
+  CALL GetQueryInfo(?); 
 
-COMMIT;`;
+  `;
   return sql;
 }
+/*
+function run_transaction() {
+
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+START TRANSACTION;
+
+    CALL GetQueryInfo('Blue Ribbon Sushi Bar & Grill'); 
+
+COMMIT;
+
+GRANT SUPER ON *.* TO 'root'@'localhost';
+
+}*/
