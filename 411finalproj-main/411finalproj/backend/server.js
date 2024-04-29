@@ -301,7 +301,7 @@ function find_restaurant(userIdA, userIdB, matchId, res) {
                          avRating = avRating[0][0]['AVG(rating)'];
                         }
                         //if(results[0].length == 0) {
-                        avRating = 0;
+                        avRating = 0; 
                         //}
                         topReview = results[1][0]; // Access the second result set
                         if(topReview) {
