@@ -141,7 +141,7 @@ const Match = () => {
             </Text>
             <VStack spacing="4px" align="flex-start">
               <Text fontSize="large" fontWeight="semibold">
-                {restaurantName}, {time} @ {restaurantName}
+                {date}, {time} @ {restaurantName}
               </Text>
               <Text fontSize="medium" fontWeight="medium">
                 {address}
