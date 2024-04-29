@@ -33,20 +33,48 @@ connection.connect((error) => {
     
 
     //connection.query() - need to go through every single restaurant and then calcualte average?
-    connection.query(check_unique_trigger(), [], function(err,rows,fileds) {
-      if(err!=null) {
-        //console.log("trigger error! "+err.stack);
-      } else {
-        console.log("trigger works!");
-      }
-    });
-    /*connection.query(create_stored_procedure(), [], function(err,rows,fields) {
+    connection.query("DROP TRIGGER IF EXISTS check_unique", [], function(err,rows,fileds) {
       if(err!=null) {
         console.log("trigger error! "+err.stack);
       } else {
         console.log("trigger works!");
       }
-    });*/
+    });
+    connection.query(check_unique_trigger(), [], function(err,rows,fileds) {
+      if(err!=null) {
+        console.log("trigger error! "+err.stack);
+      } else {
+        console.log("trigger works!");
+      }
+    });
+    connection.query("DROP PROCEDURE IF EXISTS GetQueryInfo", [], function(err,rows,fields) {
+      if(err!=null) {
+        console.log("trigger error! "+err.stack);
+      } else {
+        console.log("drop works!");
+      }
+    });
+    connection.query(create_stored_procedure(), [], function(err,rows,fields) {
+      if(err!=null) {
+        console.log("trigger error! "+err.stack);
+      } else {
+        console.log("procedure works!");
+      }
+    });
+    connection.query("DROP PROCEDURE IF EXISTS create_transaction", [], function(err,rows,fields) {
+      if(err!=null) {
+        console.log("trigger error! "+err.stack);
+      } else {
+        console.log("drop works!");
+      }
+    });
+    connection.query(create_transaction(), [], function(err,rows,fields) {
+      if(err!=null) {
+        console.log("trigger error! "+err.stack);
+      } else {
+        console.log("procedure works!");
+      }
+    });
     generate_average_ratings();
   }
 });
@@ -88,13 +116,13 @@ app.post('/api/user_profile', (req, res) => {
   count+=1;
   currentUser = {"userId": userid, "email": email, "pass": pass, "fname": fname, "lname":lname, "gender":gender, "genderPref":genderPref, "cuisinePref":cuisinePref, "maxBudget":maxBudget, "dateTime":datelen, "allergies":allergies};
   const sql = 'INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'; //need to fix this - ignore
-  connection.query("DROP TRIGGER IF EXISTS check_unique;", function(err, rows, fields) { //just making sure it works (yes it does)
+  /*connection.query("DROP TRIGGER IF EXISTS check_unique;", function(err, rows, fields) { //just making sure it works (yes it does)
     if(err!=null) {
       console.log('error connecting trigger: ' + err);
     } else {
       console.error('drop trigger: ');
     }
-  });
+  });*/
   
   connection.query(sql, [userid, email, pass, fname, lname, gender, genderPref, cuisinePref, maxBudget, datelen, allergies], (err, result) => {
       if (err) {
@@ -251,13 +279,19 @@ function find_restaurant(userIdA, userIdB, matchId, res) {
                   const time = '1:15pm';
                   let avRating = 0;
                   let topReview = '';
-                  connection.query(run_transaction(), [res_name, res_name], (err, results) => {
+                  connection.query(run_transaction(), [res_name], (err, results) => {
                     if(err) {
                         console.error('Error finding results: ' + err.stack);
                     } else {
                         // Assuming the first result set is the average rating and the second is reviews
-                        avRating = results[0]; // Access the first result set
+                        avRating = results[0][0]; // Access the first result set
+                        if(avRating) {
+                         avRating = avRating['AVG(rating)'];
+                        }
                         topReview = results[1][0]; // Access the second result set
+                        if(topReview) {
+                          topReview = "One of the customers at "+res_name+" had an average prep time of "+topReview['FoodPrepTime']+" and an order cost of $"+topReview['OrderCost'];
+                        }
                         
                         // Process the result sets as needed
                         console.log('Average Rating:', avRating);
@@ -403,25 +437,23 @@ function find_top_review() { //find the top review
 // this trigger checks to make sure all entries being added are unique
 // so the user doesn't actually add themselved twice
 // SHOULD INSTEAD REMOVE OTHER ENTRY AND ADD THIS ONE WITH THE CORRECT USERID
-function check_unique_trigger() { //has been implemented!
+function check_unique_trigger() { //works!
   const sql = `
-  DELIMITER //
     CREATE TRIGGER check_unique
     BEFORE INSERT ON User
     FOR EACH ROW
     BEGIN
-    SET @new_user = (SELECT * FROM User
+    DECLARE count INT;
+    SELECT COUNT(*) INTO count FROM User
                         WHERE Email = new.Email AND Password = new.Password AND FirstName = new.FirstName AND LastName = new.LastName AND
                         GenderIdentity = new.GenderIdentity AND GenderPreference = new.GenderPreference AND CuisinePreference = new.CuisinePreference AND 
-                        MaximumBudget = new.MaximumBudget AND OptimalLengthOfDate = new.OptimalLengthOfDate AND Allergies = new.Allergies);
+                        MaximumBudget = new.MaximumBudget AND OptimalLengthOfDate = new.OptimalLengthOfDate AND Allergies = new.Allergies;
     
-    IF @new_user IS NOT NULL THEN
+    IF count > 0 THEN
         SIGNAL SQLSTATE '45000';
     END IF;
     END;
 
-//
-DELIMITER ;
   `;
   return sql;
 }
@@ -429,41 +461,52 @@ DELIMITER ;
 // set up stored procedure to get query 3 and query 4 info
 function create_stored_procedure() { //implemented but never used.
   const sql = `
-  CREATE PROCEDURE GetQueryInfo(IN p_RestaurantName VARCHAR(255))
-BEGIN
-SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-
-    SELECT RestaurantName, AVG(Rating) AS avg_rating
-    FROM Restaurant
-    NATURAL JOIN Reviews
-    WHERE RestaurantName = p_RestaurantName
-    GROUP BY RestaurantName;
-
-    SELECT *
-    FROM Reviews
-    WHERE (RestaurantName, Rating) IN (
-        SELECT RestaurantName, MAX(Rating)
-        FROM Reviews
-        WHERE RestaurantName = p_RestaurantName
+    CREATE PROCEDURE GetQueryInfo (IN RestName VARCHAR(255))
+    BEGIN
+        IF RestName IS NOT NULL THEN
+        SELECT RestaurantName, AVG(rating)
+        FROM
+        (SELECT RestaurantName, Rating as rating
+            FROM Restaurant NATURAL JOIN Reviews) AS joined_table
         GROUP BY RestaurantName
-    )
-    ORDER BY OrderCost;
-END;`;
+        HAVING RestaurantName = RestName;
+
+        SELECT * FROM Reviews
+        WHERE
+        (RestaurantName, Rating)
+        IN 
+        (SELECT RestaurantName, MAX(Rating)
+        FROM
+            Reviews
+        GROUP BY RestaurantName
+        HAVING RestaurantName = RestName)
+        ORDER BY OrderCost;
+    END IF;
+    END;`;
   return sql;
 } 
 
 // [restaurant_name]
-function run_transaction() { //needs at least 2 adv queries - making a transaction does NOT work...
+function create_transaction() { //needs at least 2 adv queries - making a transaction does NOT work...
   const sql = `
-
-  CALL GetQueryInfo(?); 
-
+  CREATE PROCEDURE create_transaction(IN RestName VARCHAR(255))
+    BEGIN
+    START TRANSACTION;
+    IF RestName IS NOT NULL THEN
+        CALL GetQueryInfo(RestName);
+    END IF;
+  END;
   `;
+  return sql;
+}
+
+function run_transaction() {
+  const sql = `CALL create_transaction(?);`;
   return sql;
 }
 /*
 function run_transaction() {
-
+DELIMITER //
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 START TRANSACTION;
 
