@@ -265,7 +265,9 @@ function find_restaurant(userIdA, userIdB, matchId, res) {
               console.error('error find res: ' + err.stack);
             } else {
               console.log([UA.max_budget, UA.Allergies, UB.Allergies, UA.CuisinePreference, UB.CuisinePreference, UA.UserId, UB.UserId]);
-              console.log("rows:"+rows+" \n");
+              for(let i = 0; i< rows.length; i++) {
+                console.log(rows[i]['RestaurantName']);
+              }
               res_name = (rows[0]['RestaurantName']);
               let addr = "";
               connection.query('SELECT Address From Restaurant WHERE RestaurantName = ?', [res_name], (err, rows, fields) => {
@@ -275,8 +277,18 @@ function find_restaurant(userIdA, userIdB, matchId, res) {
                   addr = (rows[0]['Address']);
                   console.log(res_name+addr);
                   //return [res_name, addr];
-                  const date = '5/1/2024'; //cam make random later on...
-                  const time = '1:15pm';
+                  const start = new Date('2024-05-01'); // Start date
+                  const end = new Date('2024-08-01'); // End date
+                  const d = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+                  const date = d.toDateString(); //cam make random later on...
+                  const hours = Math.floor(Math.random() * 11)+1; // 12-hour format
+                  const intervals = ["00","15","30","45"];
+                  let minutes = intervals[Math.floor(Math.random() * 4)];
+                  if(minutes.length == 1) {
+                    minutes = "0"+minutes;
+                  }
+                  const period = hours > 10 ? 'am' : 'pm';
+                  const time = hours+":"+minutes+" "+period;
                   let avRating = 0;
                   let topReview = '';
                   connection.query(run_transaction(), [res_name], (err, results) => {
