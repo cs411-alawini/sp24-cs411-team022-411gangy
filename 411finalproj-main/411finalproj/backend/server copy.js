@@ -40,13 +40,21 @@ connection.connect((error) => {
         console.log("trigger works!");
       }
     });
-    /*connection.query(create_stored_procedure(), [], function(err,rows,fields) {
+    connection.query(create_stored_procedure(), [], function(err,rows,fields) {
       if(err!=null) {
-        console.log("trigger error! "+err.stack);
+        //console.log("stored procedure error! "+err.stack);
       } else {
-        console.log("trigger works!");
+        console.log("stored procedure works!");
       }
-    });*/
+    });
+    connection.query(create_transaction(), [], function(err,rows,fields) {
+      if(err!=null) {
+        console.log("stored transaction error! "+err.stack);
+      } else {
+        console.log("stored procedure works!");
+      }
+    });
+    
     generate_average_ratings();
   }
 });
@@ -405,62 +413,83 @@ function find_top_review() { //find the top review
 // SHOULD INSTEAD REMOVE OTHER ENTRY AND ADD THIS ONE WITH THE CORRECT USERID
 function check_unique_trigger() { //has been implemented!
   const sql = `
-  DELIMITER //
-    CREATE TRIGGER check_unique
-    BEFORE INSERT ON User
-    FOR EACH ROW
-    BEGIN
-    SET @new_user = (SELECT * FROM User
-                        WHERE Email = new.Email AND Password = new.Password AND FirstName = new.FirstName AND LastName = new.LastName AND
-                        GenderIdentity = new.GenderIdentity AND GenderPreference = new.GenderPreference AND CuisinePreference = new.CuisinePreference AND 
-                        MaximumBudget = new.MaximumBudget AND OptimalLengthOfDate = new.OptimalLengthOfDate AND Allergies = new.Allergies);
-    
-    IF @new_user IS NOT NULL THEN
-        SIGNAL SQLSTATE '45000';
-    END IF;
-    END;
-
-//
-DELIMITER ;
+  CREATE TRIGGER check_unique
+  BEFORE INSERT ON User
+  FOR EACH ROW
+  BEGIN
+  SET @new_user = (SELECT UserId FROM User
+                      WHERE Email = new.Email AND Password = new.Password AND FirstName = new.FirstName AND LastName = new.LastName AND
+                      GenderIdentity = new.GenderIdentity AND GenderPreference = new.GenderPreference AND CuisinePreference = new.CuisinePreference AND 
+                      MaximumBudget = new.MaximumBudget AND OptimalLengthOfDate = new.OptimalLengthOfDate AND Allergies = new.Allergies);
+  
+  IF @new_user IS NULL THEN
+      INSERT INTO User
+      VALUES(new.UserId, new.Email, new.Password, new.FirstName, new.LastName, new.GenderIdentity, new.GenderPreference, new.CuisinePreference, new.MaximumBudget, new.OptimalLengthOfDate, new.Allergies);
+  END IF;
+  END;
   `;
   return sql;
 }
 
 // set up stored procedure to get query 3 and query 4 info
-function create_stored_procedure() { //implemented but never used.
+function create_stored_procedure() {
   const sql = `
-  CREATE PROCEDURE GetQueryInfo(IN p_RestaurantName VARCHAR(255))
-BEGIN
-SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+  DELIMITER // 
+  CREATE PROCEDURE GetQueryInfo (IN RestName VARCHAR(255))
+  BEGIN
+      IF RestName IS NOT NULL THEN
+      SELECT RestaurantName, AVG(rating)
+      FROM
+      (SELECT RestaurantName, Rating as rating
+          FROM Restaurant NATURAL JOIN Reviews) AS joined_table
+      GROUP BY RestaurantName
+      HAVING RestaurantName = RestName;
 
-    SELECT RestaurantName, AVG(Rating) AS avg_rating
-    FROM Restaurant
-    NATURAL JOIN Reviews
-    WHERE RestaurantName = p_RestaurantName
-    GROUP BY RestaurantName;
-
-    SELECT *
-    FROM Reviews
-    WHERE (RestaurantName, Rating) IN (
-        SELECT RestaurantName, MAX(Rating)
-        FROM Reviews
-        WHERE RestaurantName = p_RestaurantName
-        GROUP BY RestaurantName
-    )
-    ORDER BY OrderCost;
-END;`;
+      SELECT * FROM Reviews
+      WHERE
+      (RestaurantName, Rating)
+      IN 
+      (SELECT RestaurantName, MAX(Rating)
+      FROM
+          Reviews
+      GROUP BY RestaurantName
+      HAVING RestaurantName = RestName)
+      ORDER BY OrderCost;
+  END IF;
+  END;
+  //
+  DELIMITER ;`;
   return sql;
 } 
 
 // [restaurant_name]
-function run_transaction() { //needs at least 2 adv queries - making a transaction does NOT work...
+function create_transaction() { //needs at least 2 adv queries - making a transaction does NOT work...
   const sql = `
+  DELIMITER //
+  CREATE PROCEDURE create_transaction(IN RestName VARCHAR(255))
+      BEGIN
+      START TRANSACTION READ ONLY;
+      IF RestName IS NOT NULL THEN
+          CALL GetQueryInfo(RestName);
+      END IF;
+      IF @ERROR <> 0 THEN
+          ROLLBACK;
+      ELSE
+          COMMIT;
+      END IF;
+  END;
 
-  CALL GetQueryInfo(?); 
-
+  COMMIT;
+//
+DELIMITER ;
   `;
   return sql;
 }
+function run_transaction() {
+  const sql = `CALL create_transaction(?);`;
+  return sql;
+}
+
 /*
 function run_transaction() {
 
