@@ -296,13 +296,18 @@ function find_restaurant(userIdA, userIdB, matchId, res) {
                         console.error('Error finding results: ' + err.stack);
                     } else {
                         // Assuming the first result set is the average rating and the second is reviews
-                        avRating = results[0][0]; // Access the first result set
-                        if(avRating) {
-                         avRating = avRating['AVG(rating)'];
+                        avRating = results; // Access the first result set
+                        if(avRating.length!=0 && avRating[0].length!=0) {
+                         avRating = avRating[0][0]['AVG(rating)'];
                         }
+                        //if(results[0].length == 0) {
+                        avRating = 0;
+                        //}
                         topReview = results[1][0]; // Access the second result set
                         if(topReview) {
                           topReview = "One of the customers at "+res_name+" had an average prep time of "+topReview['FoodPrepTime']+" and an order cost of $"+topReview['OrderCost'];
+                        } else {
+                          topReview = "No reviews given."
                         }
                         
                         // Process the result sets as needed
@@ -503,7 +508,7 @@ function create_transaction() { //needs at least 2 adv queries - making a transa
   const sql = `
   CREATE PROCEDURE create_transaction(IN RestName VARCHAR(255))
     BEGIN
-    START TRANSACTION;
+    START TRANSACTION READ WRITE;
     IF RestName IS NOT NULL THEN
         CALL GetQueryInfo(RestName);
     END IF;

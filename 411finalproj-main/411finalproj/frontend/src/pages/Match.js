@@ -68,7 +68,7 @@ const Match = () => {
       setDate(response.data.date);
       setTime(response.data.time);
       console.log(response.data.avRating);
-      if(response.data.avRating!=undefined);
+      if(response.data.avRating>=0);
         setNumStars(Math.round(response.data.avRating));
       if(response.data.topReview)
         setTopReview(response.data.topReview);
