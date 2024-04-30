@@ -56,7 +56,7 @@ const Match = () => {
   const [matchId, setMatchId] = useState(-1);
   const [topReview, setTopReview] = useState("No review provided");
   const [numStars, setNumStars] = useState(0);
-  const [name, setName] = useState(5);
+  const [name, setName] = useState("Creating Matches");
   const get_data = async (e) => {
     if(e)
     e.preventDefault();
@@ -72,7 +72,7 @@ const Match = () => {
         setNumStars(Math.round(response.data.avRating));
       if(response.data.topReview)
         setTopReview(response.data.topReview);
-      setAddress(response.data.address);
+      setAddress(response.data.addr);
       console.log(response);
     } catch(err) {console.error("failed making match"+err);}
   }

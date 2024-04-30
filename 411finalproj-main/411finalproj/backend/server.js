@@ -314,7 +314,7 @@ function find_restaurant(userIdA, userIdB, matchId, res) {
                         console.log('Average Rating:', avRating);
                         console.log('Reviews:', topReview);
                         console.log({'name':UB.FirstName,matchId, res_name, address, date, time, avRating, topReview});
-                        res.json({'name':UB.FirstName, matchId, res_name, address, date, time, avRating, topReview});
+                        res.json({'name':UB.FirstName, matchId, res_name, address, date, time, avRating, topReview, addr});
                     }
                 });
                 }
