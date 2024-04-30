@@ -402,7 +402,7 @@ function match_to_restaurant() {
   FROM (
       SELECT Res.RestaurantName,
           CASE
-              WHEN ? >= (SELECT AVG(OrderCost) FROM Reviews Rev WHERE Rev.RestaurantName = Res.RestaurantName) AND ? >= (SELECT AVG(OrderCost) FROM Reviews Rev WHERE Rev.RestaurantName = Res.RestaurantName) THEN 1
+              WHEN ? >= (SELECT AVG(OrderCost) FROM Reviews Rev GROUP BY Rev.RestaurantName HAVING Rev.RestaurantName = Res.RestaurantName) AND ? >= (SELECT AVG(OrderCost) FROM Reviews Rev GROUP BY Rev.RestaurantName HAVING Rev.RestaurantName = Res.RestaurantName) THEN 1
               ELSE 0
           END +
           CASE
@@ -416,7 +416,7 @@ function match_to_restaurant() {
       FROM Restaurant Res
   ) AS ScoredRestaurants
   ORDER BY Score DESC
-  LIMIT 15;`;
+  LIMIT 1;`;
   return sql;
 }
 
