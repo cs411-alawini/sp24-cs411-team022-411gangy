@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, VStack, Button, Text, Card, Icon, HStack } from "@chakra-ui/react";
+import { Box, VStack, Button, Text, Card, Icon, HStack, Link } from "@chakra-ui/react";
 import Logo from "../components/Logo";
 
 const ConfirmationIcon = () => (
@@ -65,6 +65,7 @@ const Confirmation = () => {
           </VStack>
         </Card>
         <VStack spacing="16px">
+          <Link to="/signup">
           <Button
             color="white"
             width="320px"
@@ -76,6 +77,7 @@ const Confirmation = () => {
               <Text>Back to login</Text>
             </HStack>
           </Button>
+          </Link>
         </VStack>
       </VStack>
     </Box>

@@ -9,13 +9,12 @@ import {
   Text,
   Button,
   HStack,
-  Link,
 } from "@chakra-ui/react";
 import Logo from "../components/Logo";
-import Page1 from "./login/Page1";
-import Page2 from "./login/Page2";
-import Page3 from "./login/Page3";
-import Page4 from "./login/Page4";
+import Page1 from "./signup/Page1";
+import Page2 from "./signup/Page2";
+import Page3 from "./signup/Page3";
+import Page4 from "./signup/Page4";
 
 const ContinueIcon = () => (
   <svg
@@ -131,10 +130,6 @@ const SignUp = () => {
             Submit
           </Button>
         )}
-        <HStack>
-          <Text textColor="gray.500">Already have an account?</Text>
-          <Link>Log in</Link>
-        </HStack>
       </VStack>
     </Box>
   );
